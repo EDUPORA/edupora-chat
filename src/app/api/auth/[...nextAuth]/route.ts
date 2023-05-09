@@ -1,13 +1,20 @@
 import bcrypt from 'bcrypt';
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GithubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import prisma from '@/libs/prismadb';
+import prismadb from '@/libs/prismadb';
 
-const handler = NextAuth({
-  adapter: PrismaAdapter(prisma),
+// import prisma from "@/app/libs/prismadb"
+
+export const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prismadb),
   providers: [
+    GithubProvider({
+      clientId: process.env.GITHUB_ID as string,
+      clientSecret: process.env.GITHUB_SECRET as string,
+    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
@@ -23,7 +30,7 @@ const handler = NextAuth({
           throw new Error('Invalid credentials');
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await prismadb.user.findUnique({
           where: {
             email: credentials.email,
           },
@@ -51,6 +58,8 @@ const handler = NextAuth({
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
