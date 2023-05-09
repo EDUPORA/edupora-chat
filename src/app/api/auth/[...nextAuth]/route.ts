@@ -1,33 +1,23 @@
 import bcrypt from 'bcrypt';
-import NextAuth, { AuthOptions, SessionStrategy } from 'next-auth';
+import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import GithubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-
 import prisma from '@/libs/prismadb';
-import { NextApiHandler } from 'next';
 
-const authOptions: AuthOptions = {
+export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    GithubProvider({
-      clientId: process.env.GITHUB_ID as string,
-      clientSecret: process.env.GITHUB_SECRET as string,
-    }),
-
     GoogleProvider({
-      clientId: process.env.GOOGLE_ID as string,
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
-
     CredentialsProvider({
       name: 'credentials',
       credentials: {
         email: { label: 'email', type: 'text' },
         password: { label: 'password', type: 'password' },
       },
-
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Invalid credentials');
@@ -58,9 +48,11 @@ const authOptions: AuthOptions = {
   ],
   debug: process.env.NODE_ENV === 'development',
   session: {
-    strategy: 'jwt' as SessionStrategy, // Set the session strategy here
+    strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export default NextAuth(authOptions);
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
